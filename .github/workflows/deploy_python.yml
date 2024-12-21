@@ -1,0 +1,33 @@
+name: build and deploy python app
+
+on:
+  push:
+    branches:
+      - master
+
+jobs: 
+  build:
+    runs-on: self-hosted
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: build docker image
+      run: |
+        docker build -t python-app .
+  deploy:
+    runs-on: self-hosted
+    needs: build  # Waits for build to finish
+    steps:
+    - name: Deploy
+      run: |
+        # Remove old container if it exists
+        if docker ps -a | grep -q "python-app"; then
+          docker rm -f "python-app"
+        fi
+        
+        # Start new container
+        docker run -d \
+          --name "python-app" \
+          -p 5000:5000 \
+          python-app:latest
